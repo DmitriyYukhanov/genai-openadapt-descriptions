@@ -21,14 +21,14 @@ def get_recording(session) -> Optional[Recording]:
         logger.warning("No recordings found in the database")
         return None
     session.refresh(recording, attribute_names=['action_events'])
-    logger.info(f"Found recording {recording.id}:{recording.name}")
+    logger.info(f"Found recording {recording.id}:{recording.task_description}")
     return recording
 
 def process_action_events(recording: Recording) -> List[str]:
     action_events = recording.processed_action_events
     total_events = len(action_events)
     
-    logger.info(f"Found {total_events} events to process")
+    logger.info(f"Found {total_events} events to process in recording {recording.id}:{recording.task_description}")
     confirmation = input(f"Do you want to generate descriptions for {total_events} events? (y/n): ").lower()
     if confirmation != 'y':
         logger.info("Operation cancelled by user")
@@ -63,7 +63,7 @@ def save_descriptions(descriptions: List[str], recording: Recording) -> None:
         return
 
     PROMPTS_DIR.mkdir(exist_ok=True)
-    safe_name = sanitize_filename(recording.name)
+    safe_name = sanitize_filename(recording.task_description)
     base_path = PROMPTS_DIR / f"prompt_recording_{recording.id}_{safe_name}"
     prompt_file_path = base_path.with_suffix('.txt')
     
