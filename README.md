@@ -41,7 +41,21 @@ Descriptions are saved to the `prompts` directory with one of these filename for
 - `prompt_recording_<id>_<recording_name>.txt` (if file doesn't exist or user chooses to overwrite)
 - `prompt_recording_<id>_<recording_name>_YYYYMMDD_HHMMSS.txt` (if file exists and user chooses not to overwrite)
 
-Each description is numbered and saved on a new line in the output file:
+Each description is numbered and saved on a new line in the output file.  
+Output example:
+
+```python
+1. Move mouse to 'Calculator icon'
+2. Left singleclick 'Calculator icon'
+3. Move mouse to 'Number 6 key'
+4. Left singleclick 'Number 6 key'
+5. Move mouse to 'Plus (+) button'
+6. Left singleclick 'Plus button'
+7. Move mouse to 'Number 3 button'
+8. Left singleclick 'Number 3 button'
+9. Move mouse to 'Equals (=) button'
+10. Left singleclick 'Equals (=) button'
+```
 
 ## Requirements
 

@@ -5,6 +5,9 @@ from openadapt.db import crud
 from openadapt.models import ActionEvent, Recording
 from datetime import datetime
 import re
+from dataclasses import dataclass
+import yaml
+import click
 
 logging.basicConfig(
     level=logging.INFO,
@@ -13,10 +16,41 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-PROMPTS_DIR = Path("prompts")
+@dataclass
+class Config:
+    output_dir: Path
+    log_level: str
+    batch_size: int = 100
+    max_retries: int = 3
+    timeout: int = 10
 
-def get_recording(session) -> Optional[Recording]:
-    recording = crud.get_latest_recording(session)
+def load_config(config_path: Optional[Path] = None) -> Config:
+    default_config = {
+        'output_dir': 'prompts',
+        'log_level': 'INFO',
+        'batch_size': 100,
+        'max_retries': 3,
+        'timeout': 10
+    }
+    
+    if config_path and config_path.exists():
+        with config_path.open() as f:
+            user_config = yaml.safe_load(f)
+            default_config.update(user_config)
+    
+    return Config(
+        output_dir=Path(default_config['output_dir']),
+        log_level=default_config['log_level'],
+        batch_size=default_config['batch_size'],
+        max_retries=default_config['max_retries'],
+        timeout=default_config['timeout']
+    )
+
+def get_recording(session, recording_id: Optional[int] = None) -> Optional[Recording]:
+    if recording_id:
+        recording = crud.get_recording_by_id(session, recording_id)
+    else:
+        recording = crud.get_latest_recording(session)
     if not recording:
         logger.warning("No recordings found in the database")
         return None
@@ -58,16 +92,16 @@ def process_action_events(recording: Recording) -> List[str]:
 def sanitize_filename(name: str) -> str:
     return re.sub(r'[<>:"/\\|?*]', '_', name)
 
-def save_descriptions(descriptions: List[str], recording: Recording) -> None:
+def save_descriptions(cfg: Config, descriptions: List[str], recording: Recording, force: bool) -> None:
     if not descriptions:
         return
 
-    PROMPTS_DIR.mkdir(exist_ok=True)
+    cfg.output_dir.mkdir(exist_ok=True)
     safe_name = sanitize_filename(recording.task_description)
-    base_path = PROMPTS_DIR / f"prompt_recording_{recording.id}_{safe_name}"
+    base_path = cfg.output_dir / f"prompt_recording_{recording.id}_{safe_name}"
     prompt_file_path = base_path.with_suffix('.txt')
     
-    if prompt_file_path.exists():
+    if prompt_file_path.exists() and not force:
         confirmation = input(f"File {prompt_file_path} already exists. Do you want to overwrite it? (y/n): ").lower()
         if confirmation != 'y':
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -81,21 +115,34 @@ def save_descriptions(descriptions: List[str], recording: Recording) -> None:
     except Exception as e:
         logger.error(f"Error saving descriptions to file: {str(e)}")
 
-def generate_action_descriptions() -> None:
+def generate_action_descriptions(cfg: Config, recording_id: Optional[int] = None, force: bool = False) -> None:
     logger.info("Starting action description generation")
     
     session = crud.get_new_session(read_only=True)
-    recording = get_recording(session)
+    recording = get_recording(session, recording_id)
     if not recording:
         return
             
     descriptions = process_action_events(recording)
     if not descriptions:
         return
-    save_descriptions(descriptions, recording)
+    save_descriptions(cfg, descriptions, recording, force)
 
-if __name__ == "__main__":
+@click.command()
+@click.option('--config', type=click.Path(exists=True, path_type=Path), help='Path to optional config file')
+@click.option('--recording-id', type=int, help='Process specific recording instead of latest')
+@click.option('--batch-size', type=int, help='Override batch size from config')
+@click.option('--force', is_flag=True, help='Overwrite existing files without asking')
+def main(config: Optional[Path], recording_id: Optional[int], batch_size: Optional[int], force: bool):
+    """Generate natural language descriptions from OpenAdapt recordings."""
+    cfg = load_config(config)
+    if batch_size:
+        cfg.batch_size = batch_size
+    
     try:
-        generate_action_descriptions()
+        generate_action_descriptions(cfg, recording_id, force)
     except Exception as e:
         logger.error(f"Unexpected error in main execution: {str(e)}")
+
+if __name__ == "__main__":
+    main()
