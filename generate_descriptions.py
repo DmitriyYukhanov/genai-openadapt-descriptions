@@ -20,30 +20,27 @@ logger = logging.getLogger(__name__)
 class Config:
     output_dir: Path
     log_level: str
-    batch_size: int = 100
-    max_retries: int = 3
-    timeout: int = 10
 
 def load_config(config_path: Optional[Path] = None) -> Config:
-    default_config = {
-        'output_dir': 'prompts',
-        'log_level': 'INFO',
-        'batch_size': 100,
-        'max_retries': 3,
-        'timeout': 10
-    }
-    
     if config_path and config_path.exists():
         with config_path.open() as f:
-            user_config = yaml.safe_load(f)
-            default_config.update(user_config)
+            config = yaml.safe_load(f)
+            config['output_dir'] = Path(config['output_dir'])
+            logger.info(f"Using config from {config_path}: {config}")
+            return Config(**config)
     
+    default_config_path = Path(__file__).parent / 'configs' / 'default_config.yaml'
+    if default_config_path.exists():
+        with default_config_path.open() as f:
+            config = yaml.safe_load(f)
+            config['output_dir'] = Path(config['output_dir'])
+            logger.info(f"Using default config: {config}")
+            return Config(**config)
+    
+    logger.info("No config file found, using hardcoded defaults")
     return Config(
-        output_dir=Path(default_config['output_dir']),
-        log_level=default_config['log_level'],
-        batch_size=default_config['batch_size'],
-        max_retries=default_config['max_retries'],
-        timeout=default_config['timeout']
+        output_dir=Path('prompts'),
+        log_level='INFO'
     )
 
 def get_recording(session, recording_id: Optional[int] = None) -> Optional[Recording]:
