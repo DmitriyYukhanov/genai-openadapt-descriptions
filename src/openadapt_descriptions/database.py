@@ -1,7 +1,8 @@
 from contextlib import contextmanager
-from typing import Optional
+from typing import Optional, Iterator
 import logging
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 from openadapt.db import crud
 from openadapt.models import Recording
 
@@ -12,8 +13,15 @@ class DatabaseError(Exception):
     pass
 
 @contextmanager
-def database_session():
-    """Context manager for database sessions with proper error handling"""
+def database_session() -> Iterator[Session]:
+    """Provide a database session context.
+    
+    Yields:
+        SQLAlchemy session object
+        
+    Raises:
+        DatabaseError: If database operations fail
+    """
     session = None
     try:
         session = crud.get_new_session(read_only=True)
@@ -25,7 +33,19 @@ def database_session():
         if session:
             session.close()
 
-def get_recording(session, recording_id: Optional[int] = None) -> Optional[Recording]:
+def get_recording(session: Session, recording_id: Optional[int] = None) -> Optional[Recording]:
+    """Retrieve a recording from the database.
+    
+    Args:
+        session: Database session
+        recording_id: Optional ID of specific recording
+        
+    Returns:
+        Recording if found, None otherwise
+        
+    Raises:
+        DatabaseError: If database operations fail
+    """
     try:
         if recording_id:
             recording = crud.get_recording_by_id(session, recording_id)

@@ -1,5 +1,22 @@
 """OpenAdapt Descriptions - Generate natural language descriptions for OpenAdapt recordings."""
 
+from typing import Protocol, Sequence, Iterator, TypeVar, List
+from pathlib import Path
+from openadapt.models import ActionEvent, Recording
+
+# Type variables
+DescriptionT = str  # For clarity of what strings represent
+ActionT = TypeVar('ActionT', bound=ActionEvent)
+
+# Protocols
+class DescriptionGenerator(Protocol):
+    """Protocol for description generators"""
+    def generate_description(self, action: ActionEvent) -> DescriptionT: ...
+
+class ActionProcessor(Protocol):
+    """Protocol for action processors"""
+    def process(self, events: Sequence[ActionEvent]) -> Iterator[DescriptionT]: ...
+
 import logging
 
 # Configure logging

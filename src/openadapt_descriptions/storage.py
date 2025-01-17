@@ -1,10 +1,11 @@
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import List
+from typing import List, Sequence
 import logging
 from .config import Config
 from .processors import ProcessingError
+from . import DescriptionT
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,28 @@ def sanitize_filename(name: str) -> str:
     sanitized = re.sub(r'[<>:"/\\|?*]', '_', name)
     return sanitized[:255]  # Maximum filename length
 
-def save_descriptions(cfg: Config, descriptions: List[str], recording_id: int, task_description: str, force: bool = False) -> None:
+def save_descriptions(
+    cfg: Config,
+    descriptions: Sequence[DescriptionT],
+    recording_id: int,
+    task_description: str,
+    force: bool = False
+) -> Path:
+    """Save descriptions to a file.
+    
+    Args:
+        cfg: Configuration object
+        descriptions: Sequence of descriptions to save
+        recording_id: ID of the recording
+        task_description: Description of the task
+        force: Whether to force overwrite existing file
+        
+    Returns:
+        Path to the saved file
+        
+    Raises:
+        ProcessingError: If file operations fail
+    """
     if not descriptions:
         raise ValueError("No descriptions to save")
 
