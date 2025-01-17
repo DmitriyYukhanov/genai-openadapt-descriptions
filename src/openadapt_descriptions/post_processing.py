@@ -1,3 +1,8 @@
+"""
+This module handles post-processing operations for generated descriptions, primarily focusing on
+validation of the descriptions using the Claude LLM (Language Learning Model).
+"""
+
 import logging
 import os
 import anthropic
