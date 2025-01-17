@@ -1,4 +1,4 @@
-# genai-openadapt-descriptions
+# openadapt-descriptions
 
 A utility script for generating natural language descriptions from OpenAdapt recordings.
 
@@ -17,19 +17,34 @@ This script processes OpenAdapt recordings and generates natural language descri
 - Configuration management via YAML files
 - Command-line interface with multiple options
 
-## Requirements
+## Installation
 
-- Python 3.x
-- OpenAdapt
-- PyYAML
-- Click
+You can use this tool in three ways:
+
+1. **Direct Usage (No Installation)**
+   ```bash
+   # From the project root directory
+   python run.py [OPTIONS]
+   ```
+
+2. **Development Installation**
+   ```bash
+   pip install -e .
+   openadapt-descriptions [OPTIONS]
+   ```
+
+3. **Regular Installation**
+   ```bash
+   pip install .
+   openadapt-descriptions [OPTIONS]
+   ```
 
 ## Usage
 
 1. Ensure you have OpenAdapt installed and configured
 2. Run the script with optional parameters:
 ```bash
-python generate_descriptions.py [OPTIONS]
+python run.py [OPTIONS]
 
 Options:
   --config PATH        Path to optional config file
@@ -68,3 +83,10 @@ Output example:
 9. Move mouse to 'Equals (=) button'
 10. Left singleclick 'Equals (=) button'
 ```
+
+## Requirements
+
+- Python 3.x
+- OpenAdapt
+- PyYAML
+- Click
