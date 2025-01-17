@@ -34,9 +34,15 @@ def main(config: Optional[Path], recording_id: Optional[int], force: bool):
         cfg = config_module.load_config(config)
         logging.getLogger().setLevel(cfg.log_level)
         generate_action_descriptions(cfg, recording_id, force)
+    except config_module.ConfigError as e:
+        raise click.ClickException(f"Configuration error: {e}")
+    except database.DatabaseError as e:
+        raise click.ClickException(f"Database error: {e}")
+    except processors.ProcessingError as e:
+        raise click.ClickException(f"Processing error: {e}")
     except Exception as e:
-        logger.error(f"Unexpected error in main execution: {str(e)}")
-        raise click.ClickException(str(e))
+        logger.error(f"Unexpected error: {str(e)}")
+        raise click.ClickException("An unexpected error occurred. Check logs for details.")
 
 if __name__ == "__main__":
     main() 

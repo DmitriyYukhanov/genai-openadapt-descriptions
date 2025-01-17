@@ -17,6 +17,7 @@ def database_session():
     session = None
     try:
         session = crud.get_new_session(read_only=True)
+        session.get_bind().execution_options(timeout=60)
         yield session
     except SQLAlchemyError as e:
         raise DatabaseError(f"Database error: {e}")

@@ -30,11 +30,12 @@ def process_action_events(recording: Recording) -> List[str]:
         logger.warning("No events to process")
         return []
 
-    logger.info(f"Found {total_events} events to process in recording {recording.id}:{recording.task_description}")
-    confirmation = input(f"Do you want to generate descriptions for {total_events} events? (y/n): ").lower()
-    if confirmation != 'y':
-        logger.info("Operation cancelled by user")
-        return []
+    logger.info(f"Found {total_events} events to process")
+    if total_events > 1000:  # Might take too much time or RAM, safety check
+        confirmation = input(f"Warning: Large number of events ({total_events}). Continue? (y/n): ").lower()
+        if confirmation != 'y':
+            logger.info("Operation cancelled by user")
+            return []
 
     descriptions = []
     action_count = 0

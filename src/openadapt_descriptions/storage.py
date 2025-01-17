@@ -18,6 +18,10 @@ def save_descriptions(cfg: Config, descriptions: List[str], recording_id: int, t
     if not descriptions:
         raise ValueError("No descriptions to save")
 
+    content = "\n".join(f"{i+1}. {desc}" for i, desc in enumerate(descriptions)) + "\n"
+    if len(content.encode('utf-8')) > 10_000_000:  # 10MB limit
+        raise ProcessingError("Output file would be too large (>10MB)")
+
     try:
         cfg.output_dir.mkdir(exist_ok=True, parents=True)
         safe_name = sanitize_filename(task_description or "unnamed")
@@ -31,8 +35,7 @@ def save_descriptions(cfg: Config, descriptions: List[str], recording_id: int, t
                 prompt_file_path = base_path.with_name(f"{base_path.name}_{timestamp}").with_suffix('.txt')
                 logger.info(f"Saving to new file: {prompt_file_path}")
         
-        numbered_descriptions = [f"{i+1}. {desc}" for i, desc in enumerate(descriptions)]
-        prompt_file_path.write_text("\n".join(numbered_descriptions) + "\n", encoding='utf-8')
+        prompt_file_path.write_text(content, encoding='utf-8')
         logger.info(f"Successfully saved descriptions to {prompt_file_path}")
     except OSError as e:
         raise ProcessingError(f"Error saving descriptions to file: {e}") 
