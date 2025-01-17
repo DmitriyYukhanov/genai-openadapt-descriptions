@@ -6,6 +6,7 @@ from . import config as config_module
 from . import processors, storage, database
 from openadapt_descriptions.config import Config
 logger = logging.getLogger(__name__)
+from .post_processing import validate_descriptions 
 
 def generate_action_descriptions(cfg: Config, recording_id: Optional[int] = None, force: bool = False, progress_bar=None) -> None:
     
@@ -18,6 +19,12 @@ def generate_action_descriptions(cfg: Config, recording_id: Optional[int] = None
             descriptions = processors.process_action_events(cfg, recording, progress_bar)
             if not descriptions:
                 return
+            
+            if not validate_descriptions(descriptions):
+                logger.warning("Generated descriptions seem to be not valid!")
+            else:
+                logger.info("Generated descriptions seem to be valid")
+
             storage.save_descriptions(cfg, descriptions, recording.id, recording.task_description, force)
     except Exception as e:
         logger.error(str(e))

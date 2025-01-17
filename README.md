@@ -16,6 +16,7 @@ This script processes OpenAdapt recordings and generates natural language descri
 - Comprehensive error handling and logging
 - Configuration management via YAML files
 - Command-line interface with multiple options
+- Post-processing with Anthropic LLM to validate descriptions
 
 ## Installation
 
@@ -41,7 +42,7 @@ You can use this tool in three ways:
 
 ## Usage
 
-1. Ensure you have OpenAdapt installed and configured
+1. Ensure you have OpenAdapt installed and configured.
 2. Run the script with optional parameters:
 ```bash
 python run.py [OPTIONS]
@@ -49,12 +50,15 @@ python run.py [OPTIONS]
 Options:
   --config PATH        Path to optional config file
   --recording-id INT   Process specific recording instead of latest
-  --force             Overwrite existing files without asking
-  --help              Show this message and exit
+  --force              Overwrite existing files without asking
+  --help               Show this message and exit
+  --quiet              Reduce output verbosity (only show errors and critical information)
 ```
-3. Follow prompts to confirm actions and save descriptions
+3. Follow prompts to confirm actions and save descriptions.
 
 ## Configuration
+
+Put your Anthropic API key in the `.env` file as `ANTHROPIC_API_KEY`.
 
 The script can be configured using a YAML file with the following options:
 ```yaml
@@ -87,6 +91,11 @@ Output example:
 ## Requirements
 
 - Python 3.x
+- Anthropic API key
+
+### Dependencies
 - OpenAdapt
 - PyYAML
 - Click
+- Anthropic
+- Tenacity

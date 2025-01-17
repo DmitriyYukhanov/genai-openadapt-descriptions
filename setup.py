@@ -12,6 +12,8 @@ setup(
         "click",
         "pyyaml",
         "tenacity",
+        "python-dotenv",
+        "anthropic",
     ],
     entry_points={
         "console_scripts": [
