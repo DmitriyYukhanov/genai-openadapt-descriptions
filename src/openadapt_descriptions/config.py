@@ -67,6 +67,9 @@ def load_config(config_path: Optional[Path] = None) -> Config:
         ConfigError: If configuration is invalid
     """
     try:
+        if (config_path is None):
+            config_path = constants.DEFAULT_CONFIG_PATH
+            
         if config_path and config_path.exists():
             with config_path.open() as f:
                 config = yaml.safe_load(f)
