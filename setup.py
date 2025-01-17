@@ -11,6 +11,7 @@ setup(
         "openadapt",
         "click",
         "pyyaml",
+        "tenacity",
     ],
     entry_points={
         "console_scripts": [

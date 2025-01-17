@@ -1,11 +1,12 @@
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import List, Sequence
+from typing import Sequence
 import logging
 from .config import Config
 from .processors import ProcessingError
 from . import DescriptionT
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +15,22 @@ def sanitize_filename(name: str) -> str:
         return "unnamed"
     sanitized = re.sub(r'[<>:"/\\|?*]', '_', name)
     return sanitized[:255]  # Maximum filename length
+
+def file_retry():
+    return retry(
+        retry=retry_if_exception_type((OSError, IOError)),
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=0.5, min=1, max=5),
+        reraise=True,
+        before_sleep=lambda retry_state: logger.warning(
+            f"File operation failed, retrying in {retry_state.next_action.sleep} seconds..."
+        )
+    )
+
+@file_retry()
+def write_descriptions(path: Path, content: str) -> None:
+    """Write descriptions to file with retry logic."""
+    path.write_text(content, encoding='utf-8')
 
 def save_descriptions(
     cfg: Config,
@@ -57,7 +74,8 @@ def save_descriptions(
                 prompt_file_path = base_path.with_name(f"{base_path.name}_{timestamp}").with_suffix('.txt')
                 logger.info(f"Saving to new file: {prompt_file_path}")
         
-        prompt_file_path.write_text(content, encoding='utf-8')
+        write_descriptions(prompt_file_path, content)
         logger.info(f"Successfully saved descriptions to {prompt_file_path}")
-    except OSError as e:
+        return prompt_file_path
+    except Exception as e:
         raise ProcessingError(f"Error saving descriptions to file: {e}") 

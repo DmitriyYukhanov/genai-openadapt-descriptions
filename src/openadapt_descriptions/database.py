@@ -6,12 +6,26 @@ from sqlalchemy.orm import Session
 from openadapt.db import crud
 from openadapt.models import Recording
 from openadapt_descriptions.config import Config
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from sqlalchemy.exc import OperationalError, TimeoutError
 
 logger = logging.getLogger(__name__)
 
 class DatabaseError(Exception):
     """Database operation errors"""
     pass
+
+# Retry decorator for database operations
+def db_retry():
+    return retry(
+        retry=retry_if_exception_type((OperationalError, TimeoutError)),
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
+        reraise=True,
+        before_sleep=lambda retry_state: logger.warning(
+            f"Database operation failed, retrying in {retry_state.next_action.sleep} seconds..."
+        )
+    )
 
 @contextmanager
 def database_session(cfg: Config) -> Iterator[Session]:
@@ -34,8 +48,9 @@ def database_session(cfg: Config) -> Iterator[Session]:
         if session:
             session.close()
 
+@db_retry()
 def get_recording(session: Session, recording_id: Optional[int] = None) -> Optional[Recording]:
-    """Retrieve a recording from the database.
+    """Retrieve a recording from the database with retry logic.
     
     Args:
         session: Database session
@@ -45,7 +60,7 @@ def get_recording(session: Session, recording_id: Optional[int] = None) -> Optio
         Recording if found, None otherwise
         
     Raises:
-        DatabaseError: If database operations fail
+        DatabaseError: If database operations fail after retries
     """
     try:
         if recording_id:

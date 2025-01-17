@@ -3,6 +3,7 @@ from . import DescriptionGenerator, DescriptionT, ActionProcessor
 from openadapt.models import Recording, ActionEvent
 import logging
 from openadapt_descriptions.config import Config
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 logger = logging.getLogger(__name__)
 
@@ -10,8 +11,25 @@ class ProcessingError(Exception):
     """Action processing errors"""
     pass
 
+class APIError(Exception):
+    """API call errors"""
+    pass
+
+def api_retry():
+    return retry(
+        retry=retry_if_exception_type(APIError),
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=8),
+        reraise=True,
+        before_sleep=lambda retry_state: logger.warning(
+            f"API call failed, retrying in {retry_state.next_action.sleep} seconds..."
+        )
+    )
+
 class DefaultGenerator(DescriptionGenerator):
     """Default description generator using OpenAdapt's prompt_for_description"""
+    
+    @api_retry()
     def generate_description(self, action: ActionEvent) -> DescriptionT:
         return action.prompt_for_description()
 
