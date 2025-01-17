@@ -138,7 +138,7 @@ def process_action_events(cfg: Config, recording: Recording, progress_bar=None) 
         click.echo(f"This will make {total_events} API calls to generate descriptions")
         click.echo(f"\nEstimated time: ~{(total_events * constants.SECONDS_PER_EVENT) / 60:.1f} minutes")
         
-        if not click.confirm("Do you want to continue?", default=False):
+        if not click.confirm("Do you want to continue?"):
             logger.info("Operation cancelled by user")
             return []
 
