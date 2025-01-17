@@ -10,6 +10,12 @@ class ConfigError(Exception):
     """Configuration related errors"""
     pass
 
+"""Configuration management for OpenAdapt descriptions.
+
+Handles loading and validation of configuration from files or defaults.
+Provides immutable configuration objects to prevent runtime changes.
+"""
+
 @dataclass(frozen=True)  # Make config immutable
 class Config:
     """Application configuration.
@@ -20,6 +26,9 @@ class Config:
         max_events: Maximum number of events to process without confirmation
         max_file_size: Maximum output file size in bytes
         db_timeout: Database operation timeout in seconds
+        
+    Raises:
+        ConfigError: If any values are invalid during validation
     """
     output_dir: Path = field(default=Path('prompts'))
     log_level: str = field(default='INFO')

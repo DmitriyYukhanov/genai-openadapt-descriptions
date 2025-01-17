@@ -1,3 +1,10 @@
+"""File storage operations for generated descriptions.
+
+This module handles saving generated descriptions to files with proper
+naming, organization, and error handling. Includes retry logic for
+file system operations.
+"""
+
 import re
 from datetime import datetime
 from pathlib import Path
@@ -11,6 +18,14 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 logger = logging.getLogger(__name__)
 
 def sanitize_filename(name: str) -> str:
+    """Create a filesystem-safe filename.
+    
+    Args:
+        name: Original filename or description
+        
+    Returns:
+        Sanitized filename safe for all filesystems
+    """
     if not name:
         return "unnamed"
     sanitized = re.sub(r'[<>:"/\\|?*]', '_', name)
@@ -29,7 +44,15 @@ def file_retry():
 
 @file_retry()
 def write_descriptions(path: Path, content: str) -> None:
-    """Write descriptions to file with retry logic."""
+    """Write descriptions to file with retry logic.
+    
+    Args:
+        path: Path where to write the file
+        content: String content to write
+        
+    Raises:
+        OSError: If file operations fail after retries
+    """
     path.write_text(content, encoding='utf-8')
 
 def save_descriptions(

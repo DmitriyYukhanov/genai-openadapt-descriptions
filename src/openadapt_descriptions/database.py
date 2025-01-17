@@ -1,3 +1,9 @@
+"""Database operations for OpenAdapt recordings.
+
+This module handles database connections and recording retrieval with proper
+error handling and retry logic for transient failures.
+"""
+
 from contextlib import contextmanager
 from typing import Optional, Iterator
 import logging
@@ -52,12 +58,15 @@ def database_session(cfg: Config) -> Iterator[Session]:
 def get_recording(session: Session, recording_id: Optional[int] = None) -> Optional[Recording]:
     """Retrieve a recording from the database with retry logic.
     
+    If no recording_id is provided, retrieves the latest recording.
+    Includes retry logic for transient database failures.
+    
     Args:
-        session: Database session
-        recording_id: Optional ID of specific recording
+        session: Active database session
+        recording_id: Optional specific recording ID to retrieve
         
     Returns:
-        Recording if found, None otherwise
+        Recording if found and valid, None otherwise
         
     Raises:
         DatabaseError: If database operations fail after retries

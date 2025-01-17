@@ -1,3 +1,10 @@
+"""Action event processing and description generation.
+
+This module provides the core functionality for converting OpenAdapt
+action events into natural language descriptions. It includes retry logic
+for API calls and proper error handling.
+"""
+
 from typing import List, Iterator, Sequence
 from . import DescriptionGenerator, DescriptionT, ActionProcessor
 from openadapt.models import Recording, ActionEvent
@@ -27,18 +34,41 @@ def api_retry():
     )
 
 class DefaultGenerator(DescriptionGenerator):
-    """Default description generator using OpenAdapt's prompt_for_description"""
+    """Default implementation of description generation using OpenAdapt's built-in method."""
     
     @api_retry()
     def generate_description(self, action: ActionEvent) -> DescriptionT:
+        """Generate description with retry logic for API calls.
+        
+        Args:
+            action: The action event to describe
+            
+        Returns:
+            Generated description
+            
+        Raises:
+            APIError: If API call fails after retries
+        """
         return action.prompt_for_description()
 
 class DefaultProcessor(ActionProcessor):
-    """Default processor implementation"""
+    """Process action events using a provided generator."""
+    
     def __init__(self, generator: DescriptionGenerator) -> None:
         self.generator = generator
 
     def process(self, events: Sequence[ActionEvent]) -> Iterator[DescriptionT]:
+        """Process a sequence of action events into descriptions.
+        
+        Args:
+            events: Sequence of action events to process
+            
+        Yields:
+            Generated descriptions for valid actions
+            
+        Raises:
+            ProcessingError: If too many errors occur during processing
+        """
         total_events = len(events)
         action_count = 0  # Initialize counter
         errors_count = 0  # Initialize counter
