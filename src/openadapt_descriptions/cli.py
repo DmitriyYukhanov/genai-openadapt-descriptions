@@ -4,14 +4,14 @@ from typing import Optional
 import logging
 from . import config as config_module
 from . import processors, storage, database
-
+from openadapt_descriptions.config import Config
 logger = logging.getLogger(__name__)
 
-def generate_action_descriptions(cfg: config_module.Config, recording_id: Optional[int] = None, force: bool = False) -> None:
+def generate_action_descriptions(cfg: Config, recording_id: Optional[int] = None, force: bool = False) -> None:
     logger.info("Starting action description generation")
     
     try:
-        with database.database_session() as session:
+        with database.database_session(cfg) as session:
             recording = database.get_recording(session, recording_id)
             if not recording:
                 return

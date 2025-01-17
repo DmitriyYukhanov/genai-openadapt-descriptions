@@ -41,8 +41,8 @@ def save_descriptions(
         raise ValueError("No descriptions to save")
 
     content = "\n".join(f"{i+1}. {desc}" for i, desc in enumerate(descriptions)) + "\n"
-    if len(content.encode('utf-8')) > 10_000_000:  # 10MB limit
-        raise ProcessingError("Output file would be too large (>10MB)")
+    if len(content.encode('utf-8')) > cfg.max_file_size:
+        raise ProcessingError(f"Output file would be too large (>{cfg.max_file_size/1_000_000:.1f}MB)")
 
     try:
         cfg.output_dir.mkdir(exist_ok=True, parents=True)

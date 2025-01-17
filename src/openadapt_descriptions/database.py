@@ -5,6 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from openadapt.db import crud
 from openadapt.models import Recording
+from openadapt_descriptions.config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +14,7 @@ class DatabaseError(Exception):
     pass
 
 @contextmanager
-def database_session() -> Iterator[Session]:
+def database_session(cfg: Config) -> Iterator[Session]:
     """Provide a database session context.
     
     Yields:
@@ -25,7 +26,7 @@ def database_session() -> Iterator[Session]:
     session = None
     try:
         session = crud.get_new_session(read_only=True)
-        session.get_bind().execution_options(timeout=60)
+        session.get_bind().execution_options(timeout=cfg.db_timeout)
         yield session
     except SQLAlchemyError as e:
         raise DatabaseError(f"Database error: {e}")

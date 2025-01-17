@@ -1,2 +1,10 @@
+# Output settings
 output_dir: "prompts"  # Directory where prompt files will be saved
-log_level: "INFO"      # Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL) 
+
+# Logging settings
+log_level: "INFO"      # Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+
+# Processing limits
+max_events: 100          # Maximum events to process without confirmation
+max_file_size: 10000000  # Maximum output file size in bytes
+db_timeout: 60           # Database operation timeout in seconds

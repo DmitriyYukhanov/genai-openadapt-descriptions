@@ -2,6 +2,7 @@ from typing import List, Iterator, Sequence
 from . import DescriptionGenerator, DescriptionT, ActionProcessor
 from openadapt.models import Recording, ActionEvent
 import logging
+from openadapt_descriptions.config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -48,22 +49,35 @@ class DefaultProcessor(ActionProcessor):
                     raise ProcessingError("Too many errors during processing")
 
 def process_action_events(recording: Recording) -> List[DescriptionT]:
-    """Process action events from a recording."""
+    """Process action events from a recording.
+    
+    Args:
+        recording: Recording containing action events
+        
+    Returns:
+        List of generated descriptions
+        
+    Raises:
+        ProcessingError: If processing fails
+    """
     if not recording.processed_action_events:
         raise ProcessingError("No processed action events available")
 
-    action_events = recording.processed_action_events
+    logger.info(f"Loading processed action events from the recording...")
+    action_events = recording.processed_action_events # long-running operation
     total_events = len(action_events)
     
     if total_events == 0:
         logger.warning("No events to process")
         return []
-
-    logger.info(f"Found {total_events} events to process")
-    if total_events > 1000:  # Might take too much time or RAM
-        confirmation = input(f"Warning: Large number of events ({total_events}). Continue? (y/n): ").lower()
+    
+    # Confirm descriptions generation before processing large recordings
+    cfg = Config()
+    if total_events > cfg.max_events:
+        logger.info(f"About to generate descriptions for {total_events} events. This will emit {total_events} Anthropic API calls under the hood.")
+        confirmation = input("Do you want to proceed? (y/n): ").lower()
         if confirmation != 'y':
-            logger.info("Operation cancelled by user")
+            logger.info("Description generation cancelled by user")
             return []
 
     generator = DefaultGenerator()
