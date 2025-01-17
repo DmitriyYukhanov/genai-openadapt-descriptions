@@ -1,3 +1,2 @@
-# Default configuration for generate_descriptions.py
 output_dir: "prompts"  # Directory where prompt files will be saved
 log_level: "INFO"      # Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL) 

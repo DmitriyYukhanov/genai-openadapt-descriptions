@@ -4,47 +4,59 @@ A utility script for generating natural language descriptions from OpenAdapt rec
 
 ## Overview
 
-This script processes OpenAdapt recordings and generates natural language descriptions for each recorded action. It works with the OpenAdapt database to retrieve recordings and their associated actions.
+This script processes OpenAdapt recordings and generates natural language descriptions for each recorded action. It works with the OpenAdapt database to retrieve recordings and their associated actions, with robust error handling and configuration options.
 
 ## Features
 
-- Retrieves the latest recording from OpenAdapt database
+- Retrieves recordings from OpenAdapt database (latest or by ID)
 - Processes action events to generate natural language descriptions
 - Saves numbered descriptions to individual files per recording
-- Smart file naming with recording ID and name
+- Smart file naming with recording ID and task description
 - Automatic timestamp-based versioning to prevent overwriting
-- Comprehensive logging
-- Error handling and user confirmation at key steps
+- Comprehensive error handling and logging
+- Configuration management via YAML files
+- Command-line interface with multiple options
+
+## Requirements
+
+- Python 3.x
+- OpenAdapt
+- PyYAML
+- Click
 
 ## Usage
 
 1. Ensure you have OpenAdapt installed and configured
-2. Run the script:
-`python generate_descriptions.py`
+2. Run the script with optional parameters:
+```bash
+python generate_descriptions.py [OPTIONS]
 
-The script will:
-1. Find the latest recording from the database
-2. Display recording ID and name
-3. Ask for confirmation to process the events
-4. Generate descriptions for each action
-5. Save the results with numbered descriptions
+Options:
+  --config PATH        Path to optional config file
+  --recording-id INT   Process specific recording instead of latest
+  --force             Overwrite existing files without asking
+  --help              Show this message and exit
+```
+3. Follow prompts to confirm actions and save descriptions
 
-## Interactive Prompts
+## Configuration
 
-The script will ask for confirmation at several points:
-- Before generating descriptions
-- Before overwriting existing files (with option to save as a new version)
+The script can be configured using a YAML file with the following options:
+```yaml
+output_dir: "prompts"  # Directory for output files
+log_level: "INFO"      # Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+```
 
 ## Output
 
-Descriptions are saved to the `prompts` directory with one of these filename formats:
-- `prompt_recording_<id>_<recording_name>.txt` (if file doesn't exist or user chooses to overwrite)
-- `prompt_recording_<id>_<recording_name>_YYYYMMDD_HHMMSS.txt` (if file exists and user chooses not to overwrite)
+Descriptions are saved to the configured output directory with one of these filename formats:
+- `prompt_recording_<id>_<task_description>.txt` (if file doesn't exist or user chooses to overwrite)
+- `prompt_recording_<id>_<task_description>_YYYYMMDD_HHMMSS.txt` (if file exists and user chooses not to overwrite)
 
 Each description is numbered and saved on a new line in the output file.  
 Output example:
 
-```python
+```
 1. Move mouse to 'Calculator icon'
 2. Left singleclick 'Calculator icon'
 3. Move mouse to 'Number 6 key'
@@ -56,17 +68,3 @@ Output example:
 9. Move mouse to 'Equals (=) button'
 10. Left singleclick 'Equals (=) button'
 ```
-
-## Requirements
-
-- Python 3.x
-- OpenAdapt
-
-## Error Handling
-
-The script includes comprehensive error handling and logging:
-- Database connection issues
-- Action processing errors
-- File I/O errors
-
-Logs include timestamps and are displayed in the console during execution.
