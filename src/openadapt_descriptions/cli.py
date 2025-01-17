@@ -30,6 +30,11 @@ def generate_action_descriptions(cfg: Config, recording_id: Optional[int] = None
 @click.option('--force', is_flag=True, help='Overwrite existing files without asking')
 def main(config: Optional[Path], recording_id: Optional[int], force: bool):
     """Generate natural language descriptions from OpenAdapt recordings."""
+    logger.info("Starting description generation", extra={
+        "config_path": str(config) if config else None,
+        "recording_id": recording_id,
+        "force": force
+    })
     try:
         cfg = config_module.load_config(config)
         logging.getLogger().setLevel(cfg.log_level)

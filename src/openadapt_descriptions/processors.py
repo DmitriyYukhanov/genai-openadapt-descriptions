@@ -40,12 +40,20 @@ class DefaultProcessor(ActionProcessor):
 
     def process(self, events: Sequence[ActionEvent]) -> Iterator[DescriptionT]:
         total_events = len(events)
-        action_count = 0
-        errors_count = 0
-
-        logger.info(f"Processing {total_events} events from the recording")
+        action_count = 0  # Initialize counter
+        errors_count = 0  # Initialize counter
+        
+        logger.info("Starting event processing", extra={
+            "total_events": total_events,
+            "processor": self.__class__.__name__
+        })
         
         for idx, action in enumerate(events, 1):
+            logger.debug("Processing action", extra={
+                "action_index": idx,
+                "total_events": total_events,
+                "action_type": type(action).__name__
+            })
             if not isinstance(action, ActionEvent):
                 logger.warning(f"Skipping event {idx}: not an ActionEvent")
                 continue

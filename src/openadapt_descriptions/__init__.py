@@ -1,8 +1,9 @@
 """OpenAdapt Descriptions - Generate natural language descriptions for OpenAdapt recordings."""
 
-from typing import Protocol, Sequence, Iterator, TypeVar, List
+from typing import Protocol, Sequence, Iterator, TypeVar, List, Any, Dict
 from pathlib import Path
-from openadapt.models import ActionEvent, Recording
+from openadapt.models import ActionEvent
+import json
 
 # Type variables
 DescriptionT = str  # For clarity of what strings represent
@@ -19,10 +20,33 @@ class ActionProcessor(Protocol):
 
 import logging
 
+class StructuredLogger(logging.Logger):
+    """Logger that adds structured context to log messages."""
+    
+    def _log_with_context(self, level: int, msg: str, args, context: Dict[str, Any], **kwargs):
+        if context:
+            msg = f"{msg} | {json.dumps(context)}"
+        super().log(level, msg, *args, **kwargs)
+
+    def info(self, msg: str, *args, extra: Dict[str, Any] = None, **kwargs):
+        self._log_with_context(logging.INFO, msg, args, extra or {}, **kwargs)
+
+    def warning(self, msg: str, *args, extra: Dict[str, Any] = None, **kwargs):
+        self._log_with_context(logging.WARNING, msg, args, extra or {}, **kwargs)
+
+    def error(self, msg: str, *args, extra: Dict[str, Any] = None, **kwargs):
+        self._log_with_context(logging.ERROR, msg, args, extra or {}, **kwargs)
+
+    def debug(self, msg: str, *args, extra: Dict[str, Any] = None, **kwargs):
+        self._log_with_context(logging.DEBUG, msg, args, extra or {}, **kwargs)
+
+# Register our custom logger
+logging.setLoggerClass(StructuredLogger)
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
+    format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 

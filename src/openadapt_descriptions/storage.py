@@ -54,6 +54,13 @@ def save_descriptions(
     Raises:
         ProcessingError: If file operations fail
     """
+    logger.info("Saving descriptions", extra={
+        "description_count": len(descriptions),
+        "recording_id": recording_id,
+        "force_overwrite": force,
+        "output_dir": str(cfg.output_dir)
+    })
+
     if not descriptions:
         raise ValueError("No descriptions to save")
 
@@ -76,6 +83,11 @@ def save_descriptions(
         
         write_descriptions(prompt_file_path, content)
         logger.info(f"Successfully saved descriptions to {prompt_file_path}")
+        content_size = len(content.encode('utf-8'))
+        logger.debug("Content statistics", extra={
+            "size_bytes": content_size,
+            "size_mb": content_size / 1_000_000
+        })
         return prompt_file_path
     except Exception as e:
         raise ProcessingError(f"Error saving descriptions to file: {e}") 

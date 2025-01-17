@@ -63,6 +63,10 @@ def get_recording(session: Session, recording_id: Optional[int] = None) -> Optio
         DatabaseError: If database operations fail after retries
     """
     try:
+        logger.info("Retrieving recording", extra={
+            "recording_id": recording_id or "latest",
+            "session_id": id(session)
+        })
         if recording_id:
             recording = crud.get_recording_by_id(session, recording_id)
             if not recording:
@@ -79,7 +83,11 @@ def get_recording(session: Session, recording_id: Optional[int] = None) -> Optio
             logger.warning(f"No action events found in recording {recording.id}")
             return None
 
-        logger.info(f"Found recording {recording.id}:{recording.task_description}")
+        logger.info("Found recording", extra={
+            "recording_id": recording.id,
+            "task": recording.task_description,
+            "event_count": len(recording.action_events)
+        })
         return recording
     except SQLAlchemyError as e:
         raise DatabaseError(f"Error retrieving recording: {e}") 
