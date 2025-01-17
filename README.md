@@ -6,65 +6,71 @@ A utility script for generating natural language descriptions from OpenAdapt rec
 
 This script processes OpenAdapt recordings and generates natural language descriptions for each recorded action. It works with the OpenAdapt database to retrieve recordings and their associated actions, with robust error handling and configuration options.
 
-## Features
+## Prerequisites
 
-- Retrieves recordings from OpenAdapt database (latest or by ID)
-- Processes action events to generate natural language descriptions
-- Saves numbered descriptions to individual files per recording
-- Smart file naming with recording ID and task description
-- Automatic timestamp-based versioning to prevent overwriting
-- Comprehensive error handling and logging
-- Configuration management via YAML files
-- Command-line interface with multiple options
-- Post-processing with Anthropic LLM to validate descriptions
+- Python 3.x
+- At least one existing OpenAdapt recording in the database
+- Anthropic API key (set in `.env` file as `ANTHROPIC_API_KEY`)
 
 ## Installation
 
-You can use this tool in three ways:
-
-1. **Direct Usage (No Installation)**
+1. **Install Required Tools & Services**
    ```bash
-   # From the project root directory
-   python run.py [OPTIONS]
+   pip install openadapt click pyyaml tenacity python-dotenv anthropic
    ```
 
-2. **Development Installation**
+2. **Install the Package (optionally)**
    ```bash
+   # Development Installation
    pip install -e .
-   openadapt-descriptions [OPTIONS]
-   ```
-
-3. **Regular Installation**
-   ```bash
+   
+   # or Regular Installation
    pip install .
-   openadapt-descriptions [OPTIONS]
    ```
 
 ## Usage
 
-1. Ensure you have OpenAdapt installed and configured.
-2. Run the script with optional parameters:
+You can run the script in two ways:
+
+1. **Directly from source**:
 ```bash
 python run.py [OPTIONS]
+```
 
+2. **As installed package**:
+```bash
+openadapt-descriptions [OPTIONS]
+```
+
+Available options:
+```bash
 Options:
   --config PATH        Path to optional config file
   --recording-id INT   Process specific recording instead of latest
-  --force              Overwrite existing files without asking
-  --help               Show this message and exit
-  --quiet              Reduce output verbosity (only show errors and critical information)
+  --force             Overwrite existing files without asking
+  --help              Show this message and exit
+  --quiet             Reduce output verbosity
 ```
-3. Follow prompts to confirm actions and save descriptions.
+
+Follow prompts to confirm actions and save descriptions.
 
 ## Configuration
 
-Put your Anthropic API key in the `.env` file as `ANTHROPIC_API_KEY`.
-
 The script can be configured using a YAML file with the following options:
 ```yaml
-output_dir: "prompts"  # Directory for output files
+# Output settings
+output_dir: "prompts"  # Directory where prompt files will be saved
+
+# Logging settings
 log_level: "INFO"      # Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+
+# Processing limits
+max_events: 100          # Maximum events to process without confirmation
+max_file_size: 10000000  # Maximum output file size in bytes
+db_timeout: 60           # Database operation timeout in seconds
 ```
+
+You can specify a custom config file using the `--config` option, otherwise the default configuration from `configs/default_config.yaml` will be used.
 
 ## Output
 
@@ -72,9 +78,7 @@ Descriptions are saved to the configured output directory with one of these file
 - `prompt_recording_<id>_<task_description>.txt` (if file doesn't exist or user chooses to overwrite)
 - `prompt_recording_<id>_<task_description>_YYYYMMDD_HHMMSS.txt` (if file exists and user chooses not to overwrite)
 
-Each description is numbered and saved on a new line in the output file.  
-Output example:
-
+Example output:
 ```
 1. Move mouse to 'Calculator icon'
 2. Left singleclick 'Calculator icon'
@@ -87,15 +91,3 @@ Output example:
 9. Move mouse to 'Equals (=) button'
 10. Left singleclick 'Equals (=) button'
 ```
-
-## Requirements
-
-- Python 3.x
-- Anthropic API key
-
-### Dependencies
-- OpenAdapt
-- PyYAML
-- Click
-- Anthropic
-- Tenacity
