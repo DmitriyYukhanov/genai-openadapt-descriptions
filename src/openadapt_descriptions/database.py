@@ -14,6 +14,7 @@ from openadapt.models import Recording
 from openadapt_descriptions.config import Config
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from sqlalchemy.exc import OperationalError, TimeoutError
+from . import constants
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +26,12 @@ class DatabaseError(Exception):
 def db_retry():
     return retry(
         retry=retry_if_exception_type((OperationalError, TimeoutError)),
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=4, max=10),
+        stop=stop_after_attempt(constants.DB_MAX_RETRIES),
+        wait=wait_exponential(
+            multiplier=1,
+            min=constants.DB_RETRY_DELAY,
+            max=constants.DB_RETRY_DELAY * 2
+        ),
         reraise=True,
         before_sleep=lambda retry_state: logger.warning(
             f"Database operation failed, retrying in {retry_state.next_action.sleep} seconds..."

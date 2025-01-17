@@ -11,6 +11,8 @@ from openadapt.models import Recording, ActionEvent
 import logging
 from openadapt_descriptions.config import Config
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+import click
+from . import constants
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +27,12 @@ class APIError(Exception):
 def api_retry():
     return retry(
         retry=retry_if_exception_type(APIError),
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=2, max=8),
+        stop=stop_after_attempt(constants.API_MAX_RETRIES),
+        wait=wait_exponential(
+            multiplier=1,
+            min=constants.API_MIN_RETRY_DELAY,
+            max=constants.API_MAX_RETRY_DELAY
+        ),
         reraise=True,
         before_sleep=lambda retry_state: logger.warning(
             f"API call failed, retrying in {retry_state.next_action.sleep} seconds..."
@@ -54,8 +60,9 @@ class DefaultGenerator(DescriptionGenerator):
 class DefaultProcessor(ActionProcessor):
     """Process action events using a provided generator."""
     
-    def __init__(self, generator: DescriptionGenerator) -> None:
+    def __init__(self, generator: DescriptionGenerator, progress_bar=None) -> None:
         self.generator = generator
+        self.progress_bar = progress_bar
 
     def process(self, events: Sequence[ActionEvent]) -> Iterator[DescriptionT]:
         """Process a sequence of action events into descriptions.
@@ -72,6 +79,7 @@ class DefaultProcessor(ActionProcessor):
         total_events = len(events)
         action_count = 0  # Initialize counter
         errors_count = 0  # Initialize counter
+        last_progress = 0  # Track last progress update
         
         logger.info("Starting event processing", extra={
             "total_events": total_events,
@@ -79,36 +87,37 @@ class DefaultProcessor(ActionProcessor):
         })
         
         for idx, action in enumerate(events, 1):
-            logger.debug("Processing action", extra={
-                "action_index": idx,
-                "total_events": total_events,
-                "action_type": type(action).__name__
-            })
             if not isinstance(action, ActionEvent):
                 logger.warning(f"Skipping event {idx}: not an ActionEvent")
                 continue
                 
             action_count += 1
-            logger.debug(f"Processing action {action_count} (Event {idx}/{total_events})")
             
             try:
                 description = self.generator.generate_description(action)
-                if not description:
-                    logger.warning(f"Empty description for action {action_count}")
-                    continue
-                logger.debug(f"Generated description: {description}")
-                yield description
+                if description:
+                    yield description
+                
+                # Update progress bar
+                if self.progress_bar:
+                    current_progress = int((idx / total_events) * 100)
+                    if current_progress > last_progress:
+                        self.progress_bar.update(current_progress - last_progress)
+                        last_progress = current_progress
+                        
             except Exception as e:
                 errors_count += 1
                 logger.error(f"Error processing action {action_count}: {str(e)}")
-                if errors_count > total_events // 2:
+                if errors_count > total_events * constants.MAX_ERROR_RATIO:
                     raise ProcessingError("Too many errors during processing")
 
-def process_action_events(recording: Recording) -> List[DescriptionT]:
+def process_action_events(cfg: Config, recording: Recording, progress_bar=None) -> List[DescriptionT]:
     """Process action events from a recording.
     
     Args:
+        cfg: Configuration object
         recording: Recording containing action events
+        progress_bar: Optional Click progress bar for overall progress
         
     Returns:
         List of generated descriptions
@@ -120,26 +129,27 @@ def process_action_events(recording: Recording) -> List[DescriptionT]:
         raise ProcessingError("No processed action events available")
 
     logger.info(f"Loading processed action events from the recording...")
-    action_events = recording.processed_action_events # long-running operation
+    action_events = recording.processed_action_events
     total_events = len(action_events)
     
-    if total_events == 0:
-        logger.warning("No events to process")
-        return []
-    
-    # Confirm descriptions generation before processing large recordings
-    cfg = Config()
     if total_events > cfg.max_events:
-        logger.info(f"About to generate descriptions for {total_events} events. This will emit {total_events} Anthropic API calls under the hood.")
-        confirmation = input("Do you want to proceed? (y/n): ").lower()
-        if confirmation != 'y':
-            logger.info("Description generation cancelled by user")
+        click.echo("\nWarning: Large number of events detected")
+        click.echo(f"Found {total_events} events to process")
+        click.echo(f"This will make {total_events} API calls to generate descriptions")
+        click.echo(f"\nEstimated time: ~{(total_events * constants.SECONDS_PER_EVENT) / 60:.1f} minutes")
+        
+        if not click.confirm("Do you want to continue?", default=False):
+            logger.info("Operation cancelled by user")
             return []
 
     generator = DefaultGenerator()
-    processor = DefaultProcessor(generator)
+    processor = DefaultProcessor(generator, progress_bar)
     
     descriptions = list(processor.process(action_events))
+
+    # Add a newline after progress bar completes
+    if progress_bar:
+        click.echo("")  # This will add the needed newline
 
     if not descriptions:
         logger.warning("No descriptions were generated")

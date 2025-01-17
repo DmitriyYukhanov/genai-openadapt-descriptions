@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Optional
 import logging
 import yaml
+from . import constants
 
 logger = logging.getLogger(__name__)
 
@@ -30,18 +31,18 @@ class Config:
     Raises:
         ConfigError: If any values are invalid during validation
     """
-    output_dir: Path = field(default=Path('prompts'))
-    log_level: str = field(default='INFO')
-    max_events: int = field(default=100)  # Require confirmation above this
-    max_file_size: int = field(default=10_000_000)  # 10MB
-    db_timeout: int = field(default=60)  # 60 seconds
+    output_dir: Path = field(default=constants.DEFAULT_OUTPUT_DIR)
+    log_level: str = field(default=constants.DEFAULT_LOG_LEVEL)
+    max_events: int = field(default=constants.MAX_EVENTS_WITHOUT_CONFIRM)
+    max_file_size: int = field(default=constants.MAX_FILE_SIZE)
+    db_timeout: int = field(default=constants.DB_TIMEOUT)
 
     def validate(self) -> None:
         """Validate configuration values."""
         if not isinstance(self.output_dir, Path):
             raise ConfigError("output_dir must be a Path object")
         
-        if self.log_level not in ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'):
+        if self.log_level not in constants.VALID_LOG_LEVELS:
             raise ConfigError(f"Invalid log_level: {self.log_level}")
             
         if self.max_events < 1:
@@ -73,13 +74,13 @@ def load_config(config_path: Optional[Path] = None) -> Config:
                     raise ConfigError("Invalid config format")
                 
                 # Convert output_dir to Path
-                config['output_dir'] = Path(config.get('output_dir', 'prompts'))
+                config['output_dir'] = Path(config.get('output_dir', str(constants.DEFAULT_OUTPUT_DIR)))
                 
                 # Use defaults for missing values
-                config.setdefault('log_level', 'INFO')
-                config.setdefault('max_events', 100)
-                config.setdefault('max_file_size', 10_000_000)
-                config.setdefault('db_timeout', 60)
+                config.setdefault('log_level', constants.DEFAULT_LOG_LEVEL)
+                config.setdefault('max_events', constants.MAX_EVENTS_WITHOUT_CONFIRM)
+                config.setdefault('max_file_size', constants.MAX_FILE_SIZE)
+                config.setdefault('db_timeout', constants.DB_TIMEOUT)
                 
                 logger.info(f"Using config from {config_path}")
                 cfg = Config(**config)

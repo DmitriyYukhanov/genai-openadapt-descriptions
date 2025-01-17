@@ -14,6 +14,7 @@ from .config import Config
 from .processors import ProcessingError
 from . import DescriptionT
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from . import constants
 
 logger = logging.getLogger(__name__)
 
@@ -29,13 +30,17 @@ def sanitize_filename(name: str) -> str:
     if not name:
         return "unnamed"
     sanitized = re.sub(r'[<>:"/\\|?*]', '_', name)
-    return sanitized[:255]  # Maximum filename length
+    return sanitized[:constants.MAX_FILENAME_LENGTH]
 
 def file_retry():
     return retry(
         retry=retry_if_exception_type((OSError, IOError)),
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=0.5, min=1, max=5),
+        stop=stop_after_attempt(constants.FILE_MAX_RETRIES),
+        wait=wait_exponential(
+            multiplier=0.5,
+            min=constants.FILE_MIN_RETRY_DELAY,
+            max=constants.FILE_MAX_RETRY_DELAY
+        ),
         reraise=True,
         before_sleep=lambda retry_state: logger.warning(
             f"File operation failed, retrying in {retry_state.next_action.sleep} seconds..."
