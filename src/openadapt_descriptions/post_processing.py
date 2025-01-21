@@ -55,6 +55,7 @@ def validate_descriptions(descriptions: list) -> bool:
                 }
             ],
             model="claude-3-5-sonnet-latest",
+            temperature=0.0, # for consistency
         )
 
         result = message.content[0].text
